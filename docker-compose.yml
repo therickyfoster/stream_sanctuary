@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  # Main application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stream-sanctuary-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+      - MONGODB_HOST=mongodb
+      - RTMP_HOST=rtmp-server
+    depends_on:
+      - postgres
+      - redis
+      - mongodb
+      - rtmp-server
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - stream-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stream-sanctuary.rule=Host(`stream-sanctuary.app`)"
+      - "traefik.http.routers.stream-sanctuary.entrypoints=websecure"
+      - "traefik.http.routers.stream-sanctuary.tls.certresolver=letsencrypt"
+
+  # RTMP Media Server
+  rtmp-server:
+    image: alfg/nginx-rtmp:latest
+    container_name: stream-sanctuary-rtmp
+    restart: unless-stopped
+    ports:
+      - "1935:1935"
+      - "8080:8080"
+    volumes:
+      - ./config/nginx-rtmp.conf:/etc/nginx/nginx.conf:ro
+      - ./hls:/tmp/hls
+      - ./recordings:/tmp/recordings
+    networks:
+      - stream-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: stream-sanctuary-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=stream_sanctuary
+      - POSTGRES_USER=stream_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - stream-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stream_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: stream-sanctuary-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - stream-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # MongoDB (for analytics)
+  mongodb:
+    image: mongo:7
+    container_name: stream-sanctuary-mongo
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-changeme}
+      - MONGO_INITDB_DATABASE=stream_sanctuary
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - stream-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: stream-sanctuary-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./hls:/usr/share/nginx/html/hls:ro
+    depends_on:
+      - app
+      - rtmp-server
+    networks:
+      - stream-network
+
+  # Optional: Adminer (Database Management UI)
+  adminer:
+    image: adminer:latest
+    container_name: stream-sanctuary-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    networks:
+      - stream-network
+    profiles:
+      - debug
+
+  # Optional: Redis Commander (Redis Management UI)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: stream-sanctuary-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD:-changeme}
+    networks:
+      - stream-network
+    profiles:
+      - debug
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  mongodb-data:
+    driver: local
+
+networks:
+  stream-network:
+    driver: bridge
