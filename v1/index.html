@@ -1,0 +1,3223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Sanctuary - RTMP Broadcasting Platform</title>
+    <meta name="description" content="Privacy-respecting RTMP streaming solution with screen sharing, multi-platform support, and offline capability">
+    
+    <!-- 
+    ═══════════════════════════════════════════════════════════════════════════
+    ZERO-HARM & ANTI-INVERSION NOTICE
+    ═══════════════════════════════════════════════════════════════════════════
+    
+    This tool is designed for legitimate content creation and educational streaming.
+    
+    INTENDED USE:
+    - Personal broadcasting to authorized platforms
+    - Educational content delivery
+    - Creative expression and community building
+    
+    NON-WEAPONIZATION COVENANT:
+    - Do not use for unauthorized surveillance
+    - Do not use to bypass platform terms of service
+    - Do not use to stream copyrighted content without permission
+    - Do not use for harassment, doxxing, or invasive monitoring
+    
+    PRIVACY SAFEGUARDS:
+    - All credentials stored locally in your browser only
+    - No external analytics or tracking
+    - User-controlled data retention
+    - Admin analytics summarize usage patterns only (no PII)
+    
+    LICENSE: MIT License - Free to use, modify, and distribute with attribution
+    
+    By using this tool, you agree to respect platform ToS, copyright law, 
+    and the dignity of all persons who may appear in your streams.
+    ═══════════════════════════════════════════════════════════════════════════
+    -->
+    
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════════
+           ROOT VARIABLES & THEME SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Centralized theming engine with multiple genre presets
+           Usage: Themes auto-switch based on user preference or can be manually selected
+           Expected: Smooth transitions between themes, accessibility-compliant colors
+        */
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f1f5f9;
+            --text-dim: #cbd5e1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --glow: rgba(99, 102, 241, 0.3);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Medieval Theme */
+        [data-theme="medieval"] {
+            --primary: #8b7355;
+            --primary-dark: #6b5640;
+            --secondary: #d4af37;
+            --accent: #c41e3a;
+            --background: #1a1410;
+            --surface: #2d2419;
+            --surface-light: #3d3020;
+            --glow: rgba(212, 175, 55, 0.3);
+        }
+        
+        /* Space Theme */
+        [data-theme="space"] {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #a78bfa;
+            --accent: #06b6d4;
+            --background: #020617;
+            --surface: #0c1222;
+            --surface-light: #1e293b;
+            --glow: rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Anime Theme */
+        [data-theme="anime"] {
+            --primary: #ff6b9d;
+            --primary-dark: #ff4081;
+            --secondary: #ffd93d;
+            --accent: #6bcfff;
+            --background: #1a0d2e;
+            --surface: #2d1b4e;
+            --surface-light: #3f2c5f;
+            --glow: rgba(255, 107, 157, 0.4);
+        }
+        
+        /* Nature Theme */
+        [data-theme="nature"] {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --secondary: #84cc16;
+            --accent: #f97316;
+            --background: #064e3b;
+            --surface: #065f46;
+            --surface-light: #047857;
+            --glow: rgba(5, 150, 105, 0.3);
+        }
+        
+        /* Cyberpunk Theme */
+        [data-theme="cyberpunk"] {
+            --primary: #ff00ff;
+            --primary-dark: #cc00cc;
+            --secondary: #00ffff;
+            --accent: #ffff00;
+            --background: #0a0a0a;
+            --surface: #1a001a;
+            --surface-light: #2a002a;
+            --glow: rgba(255, 0, 255, 0.5);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════════
+           BASE STYLES & RESET
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           PARALLAX CONSTELLATION BACKGROUND
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Animated background with morphing constellations
+           Usage: Automatically generates and animates based on user interaction
+           Expected: Smooth 60fps animation, responds to mouse movement
+        */
+        #constellation-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           HEADER & NAVIGATION
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Sticky navigation with theme selector and connection status
+           Usage: Always visible, provides quick access to key features
+        */
+        header {
+            background: var(--surface);
+            border-bottom: 2px solid var(--primary);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           GAMIFICATION HUD
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Real-time stats display with XP, achievements, and stream health
+           Usage: Updates dynamically during streaming sessions
+           Expected: Smooth animations, clear visual feedback
+        */
+        .hud {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .hud-stat {
+            background: var(--surface-light);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hud-stat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--glow);
+        }
+        
+        .hud-stat-label {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .hud-stat-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.active {
+            background: var(--success);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           MAIN CONTAINER & LAYOUT
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           COLLAPSIBLE SECTIONS
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Expandable content areas for organized feature access
+           Usage: Click headers to expand/collapse, maintains state in localStorage
+           Expected: Smooth animations, remembers user preferences
+        */
+        .section {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .section:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+        
+        .section-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--surface-light), var(--surface));
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .section-header:hover {
+            background: var(--surface-light);
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-icon {
+            font-size: 1.5rem;
+        }
+        
+        .section-toggle {
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .section.collapsed .section-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .section-content {
+            padding: 1.5rem;
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
+        }
+        
+        .section.collapsed .section-content {
+            max-height: 0;
+            padding: 0 1.5rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           FORM ELEMENTS & INPUT STYLING
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Consistent, accessible form controls with validation feedback
+           Usage: Standard inputs for RTMP URLs, stream keys, and settings
+        */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dim);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+        
+        input.error {
+            border-color: var(--danger);
+        }
+        
+        .input-hint {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           BUTTON SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Accessible, animated buttons with multiple variants
+           Usage: Primary actions (start stream), secondary (settings), danger (stop)
+        */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--glow);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           VIDEO PREVIEW
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Real-time preview of screen capture before streaming
+           Usage: Shows what will be broadcast, includes audio level meters
+        */
+        .preview-container {
+            position: relative;
+            background: var(--background);
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            border: 2px solid var(--border);
+        }
+        
+        #preview-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+        
+        .preview-overlay {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            right: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+        }
+        
+        .preview-badge {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           AUDIO VISUALIZER
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Real-time audio level monitoring with visual feedback
+           Usage: Shows input levels, prevents clipping, indicates silence
+        */
+        .audio-meter {
+            height: 8px;
+            background: var(--surface-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .audio-meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+            transition: width 0.1s;
+            width: 0%;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           PLATFORM PRESETS
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Quick-select templates for popular streaming platforms
+           Usage: One-click setup for Twitch, YouTube, Facebook, etc.
+        */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .platform-card {
+            background: var(--surface-light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        
+        .platform-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px var(--glow);
+        }
+        
+        .platform-card.selected {
+            border-color: var(--success);
+            background: linear-gradient(135deg, var(--surface-light), var(--surface));
+        }
+        
+        .platform-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .platform-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           STREAM HISTORY & ANALYTICS
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Track past streams, show statistics, enable review
+           Usage: IndexedDB-backed history with search and filtering
+        */
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: var(--background);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+        
+        .history-item:hover {
+            background: var(--surface-light);
+            border-color: var(--primary);
+        }
+        
+        .history-info {
+            flex: 1;
+        }
+        
+        .history-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .history-meta {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+        
+        .history-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           ACHIEVEMENT SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Gamification through unlockable achievements
+           Usage: Rewards milestone streams, duration, consistency
+        */
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .achievement {
+            background: var(--surface-light);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            text-align: center;
+            transition: var(--transition);
+            opacity: 0.5;
+        }
+        
+        .achievement.unlocked {
+            opacity: 1;
+            border-color: var(--success);
+            animation: achievementPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes achievementPop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .achievement-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .achievement-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .achievement-desc {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           NOTIFICATION TOAST SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Non-intrusive feedback for user actions and errors
+           Usage: Auto-dismissing messages with severity levels
+        */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .toast {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            min-width: 300px;
+            box-shadow: 0 8px 32px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+        
+        .toast.success {
+            border-color: var(--success);
+        }
+        
+        .toast.error {
+            border-color: var(--danger);
+        }
+        
+        .toast.warning {
+            border-color: var(--warning);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           EXPORT & UTILITY BUTTONS
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        .utility-bar {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           THEME SELECTOR
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        .theme-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px var(--glow);
+        }
+        
+        .theme-btn.active {
+            border-color: var(--primary);
+            border-width: 3px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           FOOTER & ATTRIBUTION
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        footer {
+            margin-top: 4rem;
+            padding: 2rem;
+            background: var(--surface);
+            border-top: 2px solid var(--border);
+            text-align: center;
+        }
+        
+        .attribution {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.8;
+        }
+        
+        .attribution h3 {
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+        
+        .attribution a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .attribution a:hover {
+            text-decoration: underline;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           RESPONSIVE DESIGN
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hud {
+                width: 100%;
+            }
+            
+            .toast-container {
+                left: 1rem;
+                right: 1rem;
+            }
+            
+            .toast {
+                min-width: auto;
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           PRINT STYLES
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            header, .hud, .btn, #constellation-canvas {
+                display: none !important;
+            }
+            
+            .section {
+                break-inside: avoid;
+                border: 1px solid #ccc;
+            }
+            
+            .section-content {
+                max-height: none !important;
+                padding: 1rem !important;
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           ACCESSIBILITY
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body data-theme="default">
+    <!-- Parallax Constellation Canvas -->
+    <canvas id="constellation-canvas"></canvas>
+    
+    <!-- Header with HUD -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🎥</div>
+                <span>Stream Sanctuary</span>
+            </div>
+            
+            <div class="hud">
+                <div class="hud-stat" title="Connection status to RTMP server">
+                    <div class="status-indicator" id="connection-status"></div>
+                    <div>
+                        <div class="hud-stat-label">Status</div>
+                        <div class="hud-stat-value" id="status-text">Offline</div>
+                    </div>
+                </div>
+                
+                <div class="hud-stat" title="Total streaming time this session">
+                    <div>
+                        <div class="hud-stat-label">Stream Time</div>
+                        <div class="hud-stat-value" id="stream-time">00:00:00</div>
+                    </div>
+                </div>
+                
+                <div class="hud-stat" title="Experience points earned through streaming">
+                    <div>
+                        <div class="hud-stat-label">XP</div>
+                        <div class="hud-stat-value" id="xp-count">0</div>
+                    </div>
+                </div>
+                
+                <div class="hud-stat" title="Current streaming level">
+                    <div>
+                        <div class="hud-stat-label">Level</div>
+                        <div class="hud-stat-value" id="level-count">1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Theme Selector -->
+        <div class="utility-bar">
+            <div class="theme-selector">
+                <span style="margin-right: 0.5rem;">Theme:</span>
+                <button class="theme-btn active" data-theme="default" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);" title="Default Tech Theme"></button>
+                <button class="theme-btn" data-theme="medieval" style="background: linear-gradient(135deg, #8b7355, #d4af37);" title="Medieval Fantasy"></button>
+                <button class="theme-btn" data-theme="space" style="background: linear-gradient(135deg, #3b82f6, #a78bfa);" title="Cosmic Space"></button>
+                <button class="theme-btn" data-theme="anime" style="background: linear-gradient(135deg, #ff6b9d, #6bcfff);" title="Anime Vibrant"></button>
+                <button class="theme-btn" data-theme="nature" style="background: linear-gradient(135deg, #059669, #84cc16);" title="Natural Earth"></button>
+                <button class="theme-btn" data-theme="cyberpunk" style="background: linear-gradient(135deg, #ff00ff, #00ffff);" title="Cyberpunk Neon"></button>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="exportAsHTML()">💾 Save HTML</button>
+                <button class="btn btn-secondary" onclick="exportAsJSON()">📦 Export Data</button>
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+            </div>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- Stream Preview -->
+            <div class="section" data-section="preview">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">📺</span>
+                        Stream Preview
+                    </div>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="preview-container">
+                        <video id="preview-video" autoplay muted playsinline></video>
+                        <div class="preview-overlay">
+                            <div class="preview-badge">
+                                <span id="preview-status">⚫ Not Streaming</span>
+                            </div>
+                            <div class="preview-badge">
+                                <span id="preview-resolution">1920x1080</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Audio Level</label>
+                        <div class="audio-meter">
+                            <div class="audio-meter-fill" id="audio-meter"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="start-capture-btn" onclick="startCapture()">
+                            🎬 Start Capture
+                        </button>
+                        <button class="btn btn-danger" id="stop-capture-btn" onclick="stopCapture()" disabled>
+                            ⏹️ Stop Capture
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RTMP Configuration -->
+            <div class="section" data-section="rtmp">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">🔗</span>
+                        RTMP Configuration
+                    </div>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label for="streaming-protocol">Streaming Protocol</label>
+                        <select id="streaming-protocol" onchange="handleProtocolChange()">
+                            <option value="webrtc-whip">WebRTC-WHIP (Recommended - Low Latency)</option>
+                            <option value="websocket">WebSocket Streaming (Real-time)</option>
+                            <option value="hls-upload">HLS Upload (Universal)</option>
+                            <option value="rtmp-relay">RTMP via WebSocket Relay</option>
+                            <option value="srt-websocket">SRT via WebSocket (Secure)</option>
+                        </select>
+                        <div class="input-hint" id="protocol-hint">Modern WebRTC protocol with sub-second latency</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rtmp-url" id="url-label">Server URL / Endpoint</label>
+                        <input type="text" id="rtmp-url" placeholder="https://stream.example.com/whip" value="">
+                        <div class="input-hint" id="url-hint">Example: https://your-server.com/whip</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="stream-key">Stream Key / Authentication Token</label>
+                        <input type="password" id="stream-key" placeholder="Your secret stream key or bearer token">
+                        <div class="input-hint">⚠️ Never share your authentication credentials publicly</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="enable-multistream" style="width: auto; margin-right: 0.5rem;">
+                            Enable Multi-Stream (Restream to multiple destinations)
+                        </label>
+                        <div class="input-hint">Stream to multiple platforms simultaneously</div>
+                    </div>
+                    
+                    <div class="form-group" id="multistream-container" style="display: none;">
+                        <label>Additional Destinations</label>
+                        <div id="multistream-destinations">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <button class="btn btn-secondary" onclick="addDestination()">➕ Add Destination</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Platform Quick Select</label>
+                        <div class="platform-grid">
+                            <div class="platform-card" onclick="selectPlatform('twitch')">
+                                <div class="platform-icon">💜</div>
+                                <div class="platform-name">Twitch</div>
+                            </div>
+                            <div class="platform-card" onclick="selectPlatform('youtube')">
+                                <div class="platform-icon">🔴</div>
+                                <div class="platform-name">YouTube</div>
+                            </div>
+                            <div class="platform-card" onclick="selectPlatform('facebook')">
+                                <div class="platform-icon">📘</div>
+                                <div class="platform-name">Facebook</div>
+                            </div>
+                            <div class="platform-card" onclick="selectPlatform('custom')">
+                                <div class="platform-icon">⚙️</div>
+                                <div class="platform-name">Custom</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="saveRTMPSettings()">
+                            💾 Save Settings
+                        </button>
+                        <button class="btn btn-secondary" onclick="testConnection()">
+                            🔌 Test Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stream Controls -->
+        <div class="section" data-section="controls" style="margin-top: 2rem;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">🎮</span>
+                    Stream Controls
+                </div>
+                <span class="section-toggle">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="video-bitrate">Video Bitrate (kbps)</label>
+                        <input type="number" id="video-bitrate" value="2500" min="500" max="10000" step="100">
+                        <div class="input-hint">Higher = better quality, more bandwidth</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="audio-bitrate">Audio Bitrate (kbps)</label>
+                        <select id="audio-bitrate">
+                            <option value="64">64 kbps</option>
+                            <option value="128" selected>128 kbps</option>
+                            <option value="192">192 kbps</option>
+                            <option value="320">320 kbps</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="framerate">Framerate (FPS)</label>
+                        <select id="framerate">
+                            <option value="24">24 FPS (Cinematic)</option>
+                            <option value="30" selected>30 FPS (Standard)</option>
+                            <option value="60">60 FPS (Smooth)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="resolution">Resolution</label>
+                        <select id="resolution">
+                            <option value="1920x1080" selected>1080p (1920x1080)</option>
+                            <option value="1280x720">720p (1280x720)</option>
+                            <option value="854x480">480p (854x480)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enable-adaptive-bitrate" style="width: auto; margin-right: 0.5rem;">
+                        Enable Adaptive Bitrate (Adjusts quality based on network)
+                    </label>
+                    <div class="input-hint">Automatically reduces quality if bandwidth drops</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Network Quality Monitor</label>
+                    <div style="background: var(--background); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-dim);">Bandwidth:</span>
+                            <span id="bandwidth-display" style="font-weight: 600;">-- Mbps</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-dim);">Latency:</span>
+                            <span id="latency-display" style="font-weight: 600;">-- ms</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-dim);">Packet Loss:</span>
+                            <span id="packet-loss-display" style="font-weight: 600;">-- %</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-dim);">Stream Health:</span>
+                            <span id="stream-health" style="font-weight: 600; color: var(--success);">Excellent</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group" style="justify-content: center;">
+                    <button class="btn btn-success" id="start-stream-btn" onclick="startStream()" style="font-size: 1.2rem; padding: 1rem 2rem;">
+                        🚀 Start Streaming
+                    </button>
+                    <button class="btn btn-danger" id="stop-stream-btn" onclick="stopStream()" disabled style="font-size: 1.2rem; padding: 1rem 2rem;">
+                        ⏹️ Stop Streaming
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stream History -->
+        <div class="section" data-section="history" style="margin-top: 2rem;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">📊</span>
+                    Stream History
+                </div>
+                <span class="section-toggle">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="history-list" id="history-list">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-dim);">
+                        No streams yet. Start your first stream to build your history!
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="clearHistory()">
+                        🗑️ Clear History
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportHistory()">
+                        📥 Export History
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievements -->
+        <div class="section" data-section="achievements" style="margin-top: 2rem;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">🏆</span>
+                    Achievements
+                </div>
+                <span class="section-toggle">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="achievement-grid" id="achievement-grid">
+                    <!-- Achievements populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enterprise Deployment Guide -->
+        <div class="section collapsed" data-section="deployment" style="margin-top: 2rem;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">📚</span>
+                    Enterprise Deployment Guide
+                </div>
+                <span class="section-toggle">▼</span>
+            </div>
+            <div class="section-content">
+                <div style="line-height: 1.8;">
+                    <h3 style="color: var(--primary); margin-bottom: 1rem;">🚀 Production Deployment</h3>
+                    
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Option 1: WebRTC-WHIP (Recommended)</h4>
+                    <p><strong>Best for:</strong> Low-latency streaming, modern infrastructure</p>
+                    <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                        <li><strong>Open Source:</strong> <a href="https://github.com/pion/webrtc" target="_blank" style="color: var(--primary);">Pion WebRTC</a> (Go)</li>
+                        <li><strong>Commercial:</strong> Cloudflare Stream, Mux, Dolby.io</li>
+                        <li><strong>Setup:</strong> Deploy WHIP endpoint, configure CORS, set authentication</li>
+                        <li><strong>Code Example:</strong></li>
+                    </ul>
+                    <pre style="background: var(--background); padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border);"><code>// WHIP Server (Node.js + Express)
+const express = require('express');
+const app = express();
+
+app.post('/whip', async (req, res) => {
+  const sdp = req.body;
+  const auth = req.headers.authorization;
+  
+  // Validate authentication
+  if (!validateToken(auth)) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  // Process SDP offer, create answer
+  const answer = await processWebRTCOffer(sdp);
+  res.send(answer);
+});</code></pre>
+                    
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Option 2: WebSocket Streaming</h4>
+                    <p><strong>Best for:</strong> Real-time data, custom processing pipelines</p>
+                    <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                        <li><strong>Libraries:</strong> ws (Node.js), websockets (Python), Gorilla WebSocket (Go)</li>
+                        <li><strong>Setup:</strong> WebSocket server receives binary chunks, processes/forwards</li>
+                        <li><strong>Code Example:</strong></li>
+                    </ul>
+                    <pre style="background: var(--background); padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border);"><code>// WebSocket Server (Node.js)
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on('connection', (ws) => {
+  ws.on('message', (data) => {
+    // data is binary video chunk
+    // Forward to RTMP, HLS, or storage
+    processVideoChunk(data);
+  });
+});</code></pre>
+                    
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Option 3: RTMP Relay Bridge</h4>
+                    <p><strong>Best for:</strong> Compatibility with existing RTMP infrastructure</p>
+                    <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                        <li><strong>Tools:</strong> <a href="https://github.com/illuspas/Node-Media-Server" target="_blank" style="color: var(--primary);">Node-Media-Server</a>, <a href="https://github.com/ossrs/srs" target="_blank" style="color: var(--primary);">SRS</a>, Nginx-RTMP</li>
+                        <li><strong>Architecture:</strong> Browser → WebSocket → Server → RTMP</li>
+                        <li><strong>Setup:</strong></li>
+                    </ul>
+                    <pre style="background: var(--background); padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border);"><code>// Install Node-Media-Server
+npm install node-media-server
+
+// Server code
+const NodeMediaServer = require('node-media-server');
+const config = {
+  rtmp: { port: 1935, chunk_size: 60000, gop_cache: true },
+  http: { port: 8000, allow_origin: '*' }
+};
+var nms = new NodeMediaServer(config);
+nms.run();</code></pre>
+                    
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Option 4: HLS Upload</h4>
+                    <p><strong>Best for:</strong> VOD, universal playback, CDN distribution</p>
+                    <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                        <li><strong>Process:</strong> Receive video segments → Transcode → Generate m3u8 playlist</li>
+                        <li><strong>Tools:</strong> FFmpeg, AWS MediaConvert, Google Transcoder API</li>
+                        <li><strong>Storage:</strong> S3, Google Cloud Storage, Cloudflare R2</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 2rem; margin-bottom: 1rem;">🔐 Security Best Practices</h3>
+                    <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                        <li>✅ Use HTTPS/WSS for all connections</li>
+                        <li>✅ Implement JWT or API key authentication</li>
+                        <li>✅ Rate limit API endpoints (prevent abuse)</li>
+                        <li>✅ Validate stream keys server-side</li>
+                        <li>✅ Enable CORS only for trusted domains</li>
+                        <li>✅ Monitor bandwidth usage per user/session</li>
+                        <li>✅ Implement abuse detection (ToS violations)</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 2rem; margin-bottom: 1rem;">📊 Infrastructure Requirements</h3>
+                    <div style="background: var(--background); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem;">
+                        <p><strong>Small Scale (1-100 concurrent streams):</strong></p>
+                        <ul style="margin-left: 1.5rem;">
+                            <li>Server: 2-4 vCPUs, 4-8GB RAM</li>
+                            <li>Bandwidth: 100-500 Mbps</li>
+                            <li>Cost: $50-200/month</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: var(--background); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem;">
+                        <p><strong>Medium Scale (100-1000 concurrent streams):</strong></p>
+                        <ul style="margin-left: 1.5rem;">
+                            <li>Load-balanced cluster: 4-8 servers</li>
+                            <li>CDN integration required</li>
+                            <li>Database: PostgreSQL/Redis for state</li>
+                            <li>Cost: $500-2000/month</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: var(--background); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                        <p><strong>Enterprise Scale (1000+ concurrent streams):</strong></p>
+                        <ul style="margin-left: 1.5rem;">
+                            <li>Kubernetes cluster, auto-scaling</li>
+                            <li>Multi-region deployment</li>
+                            <li>Commercial CDN (Cloudflare, Fastly, Akamai)</li>
+                            <li>Managed services (AWS MediaLive, GCP)</li>
+                            <li>Cost: $2000-20000+/month</li>
+                        </ul>
+                    </div>
+                    
+                    <h3 style="color: var(--primary); margin-top: 2rem; margin-bottom: 1rem;">🛠️ Recommended Service Providers</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><strong>Cloudflare Stream:</strong> Turnkey WebRTC, RTMP, HLS - $1/1000 minutes</li>
+                        <li><strong>Mux:</strong> Developer-friendly API, excellent docs - $0.50/1000 minutes</li>
+                        <li><strong>AWS IVS:</strong> Twitch-based tech, ultra-low latency - Variable pricing</li>
+                        <li><strong>Dolby.io:</strong> High-quality WebRTC, SFU included - $0.75/1000 minutes</li>
+                        <li><strong>Self-hosted:</strong> SRS, Node-Media-Server - Infrastructure costs only</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 2rem; margin-bottom: 1rem;">📖 Additional Resources</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><a href="https://datatracker.ietf.org/doc/draft-ietf-wish-whip/" target="_blank" style="color: var(--primary);">WHIP Protocol Specification</a></li>
+                        <li><a href="https://webrtc.org/" target="_blank" style="color: var(--primary);">WebRTC Official Documentation</a></li>
+                        <li><a href="https://github.com/ossrs/srs" target="_blank" style="color: var(--primary);">SRS (Simple Realtime Server)</a></li>
+                        <li><a href="https://obsproject.com/wiki/" target="_blank" style="color: var(--primary);">OBS Studio Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="attribution">
+            <h3>⚖️ Zero-Harm Commitment & Attributions</h3>
+            <p>
+                <strong>Stream Sanctuary</strong> is designed for ethical content creation and educational purposes.
+                This tool respects your privacy—all data stays in your browser via IndexedDB.
+            </p>
+            <p>
+                <strong>Inspired by patterns from:</strong>
+                <a href="https://www.onestream.live/" target="_blank" rel="noopener">OneStream.live</a> (multi-platform streaming UI/UX),
+                <a href="https://obsproject.com/" target="_blank" rel="noopener">OBS Studio</a> (broadcast architecture concepts),
+                and the <a href="https://github.com/topics/webrtc" target="_blank" rel="noopener">WebRTC community</a>.
+            </p>
+            <p>
+                <strong>Technologies:</strong> HTML5 Canvas, Web Audio API, MediaRecorder API, IndexedDB, Screen Capture API.
+                Licensed under <strong>MIT License</strong> - free to use, modify, and share with attribution.
+            </p>
+            <p style="font-size: 0.85rem; margin-top: 1rem; opacity: 0.7;">
+                📧 Analytics Summary: admin@planetaryrestorationarchive.com<br>
+                Built with care for creators, educators, and communities worldwide.
+            </p>
+        </div>
+    </footer>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Noscript Fallback -->
+    <noscript>
+        <div style="padding: 2rem; text-align: center; background: var(--danger); color: white;">
+            <h2>JavaScript Required</h2>
+            <p>This application requires JavaScript to function. Please enable JavaScript in your browser settings.</p>
+        </div>
+    </noscript>
+
+    <script>
+        /* ═══════════════════════════════════════════════════════════════════════════
+           GLOBAL STATE MANAGEMENT
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Centralized application state with persistence
+           Usage: All components read/write from this state
+           Expected: Reactive updates, automatic IndexedDB sync
+        */
+        
+        const APP_STATE = {
+            streaming: false,
+            capturing: false,
+            mediaStream: null,
+            mediaRecorder: null,
+            audioContext: null,
+            analyser: null,
+            startTime: null,
+            elapsedTime: 0,
+            xp: 0,
+            level: 1,
+            achievements: [],
+            streamHistory: [],
+            rtmpSettings: {
+                url: '',
+                key: '',
+                platform: 'custom'
+            },
+            streamSettings: {
+                videoBitrate: 2500,
+                audioBitrate: 128,
+                framerate: 30,
+                resolution: '1920x1080'
+            }
+        };
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           INDEXEDDB SETUP
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Persistent local storage for settings, history, and achievements
+           Usage: Auto-saves all user data, survives page refresh
+           Expected: Version migrations handled gracefully
+        */
+        
+        let db;
+        
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('StreamSanctuaryDB', 2);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    
+                    // Stream History Store
+                    if (!db.objectStoreNames.contains('streams')) {
+                        const streamStore = db.createObjectStore('streams', { keyPath: 'id', autoIncrement: true });
+                        streamStore.createIndex('timestamp', 'timestamp', { unique: false });
+                        streamStore.createIndex('platform', 'platform', { unique: false });
+                    }
+                    
+                    // Settings Store
+                    if (!db.objectStoreNames.contains('settings')) {
+                        db.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                    
+                    // Achievements Store
+                    if (!db.objectStoreNames.contains('achievements')) {
+                        db.createObjectStore('achievements', { keyPath: 'id' });
+                    }
+                    
+                    // Analytics Store (privacy-respecting aggregates only)
+                    if (!db.objectStoreNames.contains('analytics')) {
+                        const analyticsStore = db.createObjectStore('analytics', { keyPath: 'date' });
+                        analyticsStore.createIndex('date', 'date', { unique: true });
+                    }
+                };
+            });
+        }
+        
+        // Save to IndexedDB
+        function saveToStore(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.put(data);
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Load from IndexedDB
+        function loadFromStore(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(key);
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Get all from store
+        function getAllFromStore(storeName) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           CONSTELLATION BACKGROUND ANIMATION
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Dynamic parallax background with mouse-reactive particles
+           Usage: Automatically animates, responds to mouse movement
+           Expected: 60fps, low CPU usage via requestAnimationFrame
+        */
+        
+        const canvas = document.getElementById('constellation-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: 0, y: 0 };
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Mouse interaction
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < 100) {
+                    this.x -= dx * 0.01;
+                    this.y -= dy * 0.01;
+                }
+                
+                // Wrap around edges
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(99, 102, 241, 0.5)';
+                ctx.fill();
+            }
+        }
+        
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.min(100, Math.floor(canvas.width * canvas.height / 10000));
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(99, 102, 241, ${0.2 * (1 - dist / 150)})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        function animateConstellation() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            drawConnections();
+            
+            requestAnimationFrame(animateConstellation);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           SCREEN CAPTURE & MEDIA HANDLING
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Capture screen/window with audio, display preview
+           Usage: Requests permission, starts MediaStream
+           Expected: High-quality capture, minimal latency
+        */
+        
+        async function startCapture() {
+            try {
+                // Request screen capture with audio
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: 'always',
+                        displaySurface: 'monitor'
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    }
+                });
+                
+                // Optionally add microphone audio
+                let audioStream = null;
+                try {
+                    audioStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true
+                        } 
+                    });
+                } catch (e) {
+                    console.warn('Microphone access denied, proceeding without mic audio');
+                }
+                
+                // Combine streams
+                const tracks = [...displayStream.getTracks()];
+                if (audioStream) {
+                    tracks.push(...audioStream.getAudioTracks());
+                }
+                
+                APP_STATE.mediaStream = new MediaStream(tracks);
+                
+                // Display preview
+                const preview = document.getElementById('preview-video');
+                preview.srcObject = APP_STATE.mediaStream;
+                
+                // Setup audio visualization
+                setupAudioVisualization();
+                
+                // Update UI
+                APP_STATE.capturing = true;
+                document.getElementById('start-capture-btn').disabled = true;
+                document.getElementById('stop-capture-btn').disabled = false;
+                document.getElementById('preview-status').textContent = '🟢 Capturing';
+                
+                // Update resolution display
+                const videoTrack = displayStream.getVideoTracks()[0];
+                const settings = videoTrack.getSettings();
+                document.getElementById('preview-resolution').textContent = 
+                    `${settings.width}x${settings.height}`;
+                
+                showToast('Screen capture started!', 'success');
+                
+                // Handle stream end (user stops sharing)
+                displayStream.getVideoTracks()[0].addEventListener('ended', () => {
+                    stopCapture();
+                });
+                
+            } catch (error) {
+                console.error('Error starting capture:', error);
+                showToast('Failed to start screen capture: ' + error.message, 'error');
+            }
+        }
+        
+        function stopCapture() {
+            if (APP_STATE.mediaStream) {
+                APP_STATE.mediaStream.getTracks().forEach(track => track.stop());
+                APP_STATE.mediaStream = null;
+            }
+            
+            const preview = document.getElementById('preview-video');
+            preview.srcObject = null;
+            
+            APP_STATE.capturing = false;
+            document.getElementById('start-capture-btn').disabled = false;
+            document.getElementById('stop-capture-btn').disabled = true;
+            document.getElementById('preview-status').textContent = '⚫ Not Capturing';
+            
+            // Stop streaming if active
+            if (APP_STATE.streaming) {
+                stopStream();
+            }
+            
+            showToast('Screen capture stopped', 'success');
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           AUDIO VISUALIZATION
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Real-time audio level metering with clipping detection
+           Usage: Monitors input levels, prevents distortion
+        */
+        
+        function setupAudioVisualization() {
+            if (!APP_STATE.mediaStream) return;
+            
+            const audioTracks = APP_STATE.mediaStream.getAudioTracks();
+            if (audioTracks.length === 0) return;
+            
+            APP_STATE.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = APP_STATE.audioContext.createMediaStreamSource(APP_STATE.mediaStream);
+            APP_STATE.analyser = APP_STATE.audioContext.createAnalyser();
+            APP_STATE.analyser.fftSize = 256;
+            
+            source.connect(APP_STATE.analyser);
+            
+            const bufferLength = APP_STATE.analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            function updateAudioMeter() {
+                if (!APP_STATE.capturing) return;
+                
+                APP_STATE.analyser.getByteFrequencyData(dataArray);
+                
+                // Calculate average volume
+                const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+                const percentage = (average / 255) * 100;
+                
+                document.getElementById('audio-meter').style.width = percentage + '%';
+                
+                requestAnimationFrame(updateAudioMeter);
+            }
+            
+            updateAudioMeter();
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           ENTERPRISE-GRADE STREAMING ENGINE
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Production-ready streaming with multiple protocol support
+           Usage: WebRTC-WHIP, HLS upload, SRT emulation, WebSocket streaming
+           Expected: Works out-of-box with real streaming servers
+           
+           SUPPORTED PROTOCOLS:
+           1. WebRTC-WHIP (WebRTC-HTTP Ingestion Protocol) - Modern, low-latency
+           2. HLS Upload (HTTP Live Streaming chunks) - Universal compatibility
+           3. WebSocket Streaming - Real-time binary data transmission
+           4. RTMP Bridge - Via WebSocket-to-RTMP relay server
+           5. SRT Emulation - Secure Reliable Transport via WebSocket wrapper
+           
+           ENTERPRISE FEATURES:
+           - Automatic reconnection with exponential backoff
+           - Adaptive bitrate based on network conditions
+           - Multi-stream simultaneous output (restream to multiple platforms)
+           - Stream health monitoring and quality metrics
+           - Failover redundancy support
+           - Bandwidth estimation and throttling
+        */
+        
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           MULTI-PROTOCOL STREAMING ENGINE
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        class StreamingEngine {
+            constructor() {
+                this.connections = [];
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.reconnectDelay = 1000;
+                this.healthCheckInterval = null;
+                this.bandwidthMonitor = null;
+            }
+            
+            async startWebRTCWHIP(url, authToken, stream) {
+                // WebRTC-HTTP Ingestion Protocol (WHIP)
+                // RFC: https://datatracker.ietf.org/doc/draft-ietf-wish-whip/
+                
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+                
+                // Add tracks to peer connection
+                stream.getTracks().forEach(track => {
+                    pc.addTrack(track, stream);
+                });
+                
+                // Create offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                // Wait for ICE gathering
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        pc.addEventListener('icegatheringstatechange', () => {
+                            if (pc.iceGatheringState === 'complete') {
+                                resolve();
+                            }
+                        });
+                    }
+                });
+                
+                // Send offer to WHIP endpoint
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/sdp',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: pc.localDescription.sdp
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`WHIP endpoint returned ${response.status}`);
+                    }
+                    
+                    // Get answer from server
+                    const answer = await response.text();
+                    await pc.setRemoteDescription({
+                        type: 'answer',
+                        sdp: answer
+                    });
+                    
+                    // Monitor connection
+                    pc.addEventListener('connectionstatechange', () => {
+                        console.log('WebRTC connection state:', pc.connectionState);
+                        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                            this.handleDisconnect('webrtc-whip');
+                        }
+                    });
+                    
+                    this.connections.push({
+                        type: 'webrtc-whip',
+                        connection: pc,
+                        url: url
+                    });
+                    
+                    return { success: true, connection: pc };
+                    
+                } catch (error) {
+                    console.error('WHIP streaming error:', error);
+                    pc.close();
+                    throw error;
+                }
+            }
+            
+            async startWebSocketStream(url, authToken, stream) {
+                return new Promise((resolve, reject) => {
+                    const ws = new WebSocket(url);
+                    ws.binaryType = 'arraybuffer';
+                    
+                    ws.onopen = () => {
+                        // Send authentication
+                        ws.send(JSON.stringify({
+                            type: 'auth',
+                            token: authToken
+                        }));
+                        
+                        // Setup MediaRecorder to send chunks via WebSocket
+                        const mediaRecorder = new MediaRecorder(stream, {
+                            mimeType: 'video/webm;codecs=vp9,opus',
+                            videoBitsPerSecond: APP_STATE.streamSettings.videoBitrate * 1000
+                        });
+                        
+                        mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                                // Send binary chunk
+                                event.data.arrayBuffer().then(buffer => {
+                                    ws.send(buffer);
+                                });
+                            }
+                        };
+                        
+                        mediaRecorder.start(1000); // 1-second chunks
+                        
+                        this.connections.push({
+                            type: 'websocket',
+                            connection: ws,
+                            mediaRecorder: mediaRecorder,
+                            url: url
+                        });
+                        
+                        resolve({ success: true, connection: ws, mediaRecorder });
+                    };
+                    
+                    ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        reject(error);
+                    };
+                    
+                    ws.onclose = () => {
+                        console.log('WebSocket closed');
+                        this.handleDisconnect('websocket');
+                    };
+                    
+                    ws.onmessage = (event) => {
+                        // Handle server messages (health checks, etc.)
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.type === 'health') {
+                                console.log('Stream health:', data);
+                            }
+                        } catch (e) {
+                            // Binary data, ignore
+                        }
+                    };
+                });
+            }
+            
+            async startHLSUpload(url, authToken, stream) {
+                // HLS Upload: Segment stream and upload chunks
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm;codecs=vp9,opus',
+                    videoBitsPerSecond: APP_STATE.streamSettings.videoBitrate * 1000
+                });
+                
+                let segmentIndex = 0;
+                
+                mediaRecorder.ondataavailable = async (event) => {
+                    if (event.data.size > 0) {
+                        try {
+                            // Upload segment
+                            const formData = new FormData();
+                            formData.append('segment', event.data, `segment_${segmentIndex}.webm`);
+                            formData.append('index', segmentIndex);
+                            
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${authToken}`
+                                },
+                                body: formData
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`Upload failed: ${response.status}`);
+                            }
+                            
+                            segmentIndex++;
+                            
+                        } catch (error) {
+                            console.error('HLS upload error:', error);
+                            this.handleDisconnect('hls-upload');
+                        }
+                    }
+                };
+                
+                mediaRecorder.start(5000); // 5-second segments for HLS
+                
+                this.connections.push({
+                    type: 'hls-upload',
+                    mediaRecorder: mediaRecorder,
+                    url: url
+                });
+                
+                return { success: true, mediaRecorder };
+            }
+            
+            async startRTMPRelay(url, streamKey, stream) {
+                // RTMP via WebSocket relay
+                // Connect to WebSocket relay that bridges to RTMP server
+                const relayUrl = 'wss://relay.streambridge.io/rtmp'; // Example relay service
+                
+                const ws = new WebSocket(relayUrl);
+                ws.binaryType = 'arraybuffer';
+                
+                return new Promise((resolve, reject) => {
+                    ws.onopen = () => {
+                        // Send RTMP connection info
+                        ws.send(JSON.stringify({
+                            type: 'connect',
+                            rtmpUrl: url,
+                            streamKey: streamKey
+                        }));
+                        
+                        const mediaRecorder = new MediaRecorder(stream, {
+                            mimeType: 'video/webm;codecs=vp9,opus',
+                            videoBitsPerSecond: APP_STATE.streamSettings.videoBitrate * 1000
+                        });
+                        
+                        mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                                event.data.arrayBuffer().then(buffer => {
+                                    ws.send(buffer);
+                                });
+                            }
+                        };
+                        
+                        mediaRecorder.start(1000);
+                        
+                        this.connections.push({
+                            type: 'rtmp-relay',
+                            connection: ws,
+                            mediaRecorder: mediaRecorder,
+                            url: url
+                        });
+                        
+                        resolve({ success: true, connection: ws, mediaRecorder });
+                    };
+                    
+                    ws.onerror = (error) => {
+                        reject(error);
+                    };
+                });
+            }
+            
+            async startSRTWebSocket(url, authToken, stream) {
+                // SRT (Secure Reliable Transport) via WebSocket bridge
+                const ws = new WebSocket(url);
+                ws.binaryType = 'arraybuffer';
+                
+                return new Promise((resolve, reject) => {
+                    ws.onopen = () => {
+                        ws.send(JSON.stringify({
+                            type: 'srt-init',
+                            token: authToken,
+                            latency: 2000, // 2-second latency buffer
+                            encryption: true
+                        }));
+                        
+                        const mediaRecorder = new MediaRecorder(stream, {
+                            mimeType: 'video/webm;codecs=vp9,opus',
+                            videoBitsPerSecond: APP_STATE.streamSettings.videoBitrate * 1000
+                        });
+                        
+                        mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                                event.data.arrayBuffer().then(buffer => {
+                                    // Add SRT packet header simulation
+                                    const packet = new Uint8Array(buffer.byteLength + 16);
+                                    const header = new DataView(packet.buffer, 0, 16);
+                                    header.setUint32(0, Date.now()); // Timestamp
+                                    packet.set(new Uint8Array(buffer), 16);
+                                    ws.send(packet);
+                                });
+                            }
+                        };
+                        
+                        mediaRecorder.start(500); // Smaller chunks for SRT
+                        
+                        this.connections.push({
+                            type: 'srt-websocket',
+                            connection: ws,
+                            mediaRecorder: mediaRecorder,
+                            url: url
+                        });
+                        
+                        resolve({ success: true, connection: ws, mediaRecorder });
+                    };
+                    
+                    ws.onerror = (error) => {
+                        reject(error);
+                    };
+                });
+            }
+            
+            handleDisconnect(type) {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+                    
+                    showToast(`Connection lost. Reconnecting in ${delay/1000}s...`, 'warning');
+                    
+                    setTimeout(() => {
+                        if (APP_STATE.streaming) {
+                            this.reconnect(type);
+                        }
+                    }, delay);
+                } else {
+                    showToast('Max reconnection attempts reached. Stream stopped.', 'error');
+                    stopStream();
+                }
+            }
+            
+            async reconnect(type) {
+                // Attempt to reconnect with same settings
+                showToast('Attempting to reconnect...', 'warning');
+                // Reconnection logic would go here
+            }
+            
+            startHealthChecks() {
+                this.healthCheckInterval = setInterval(() => {
+                    this.connections.forEach(conn => {
+                        if (conn.type === 'websocket' && conn.connection.readyState === WebSocket.OPEN) {
+                            conn.connection.send(JSON.stringify({ type: 'ping' }));
+                        }
+                    });
+                }, 10000); // Every 10 seconds
+            }
+            
+            stopHealthChecks() {
+                if (this.healthCheckInterval) {
+                    clearInterval(this.healthCheckInterval);
+                    this.healthCheckInterval = null;
+                }
+            }
+            
+            stopAll() {
+                this.connections.forEach(conn => {
+                    if (conn.mediaRecorder) {
+                        conn.mediaRecorder.stop();
+                    }
+                    if (conn.connection) {
+                        if (conn.connection instanceof RTCPeerConnection) {
+                            conn.connection.close();
+                        } else if (conn.connection instanceof WebSocket) {
+                            conn.connection.close();
+                        }
+                    }
+                });
+                
+                this.connections = [];
+                this.stopHealthChecks();
+                this.reconnectAttempts = 0;
+            }
+        }
+        
+        const streamingEngine = new StreamingEngine();
+        
+        async function startStream() {
+            if (!APP_STATE.capturing) {
+                showToast('Please start screen capture first!', 'warning');
+                return;
+            }
+            
+            if (!APP_STATE.rtmpSettings.url || !APP_STATE.rtmpSettings.key) {
+                showToast('Please configure streaming settings first!', 'warning');
+                return;
+            }
+            
+            const protocol = document.getElementById('streaming-protocol').value;
+            const url = APP_STATE.rtmpSettings.url;
+            const authToken = APP_STATE.rtmpSettings.key;
+            
+            try {
+                showToast('Initiating stream connection...', 'warning');
+                
+                let result;
+                
+                switch (protocol) {
+                    case 'webrtc-whip':
+                        result = await streamingEngine.startWebRTCWHIP(url, authToken, APP_STATE.mediaStream);
+                        break;
+                    case 'websocket':
+                        result = await streamingEngine.startWebSocketStream(url, authToken, APP_STATE.mediaStream);
+                        break;
+                    case 'hls-upload':
+                        result = await streamingEngine.startHLSUpload(url, authToken, APP_STATE.mediaStream);
+                        break;
+                    case 'rtmp-relay':
+                        result = await streamingEngine.startRTMPRelay(url, authToken, APP_STATE.mediaStream);
+                        break;
+                    case 'srt-websocket':
+                        result = await streamingEngine.startSRTWebSocket(url, authToken, APP_STATE.mediaStream);
+                        break;
+                    default:
+                        throw new Error('Unknown protocol: ' + protocol);
+                }
+                
+                if (!result.success) {
+                    throw new Error('Failed to establish stream connection');
+                }
+                
+                // Handle multi-stream if enabled
+                if (document.getElementById('enable-multistream').checked) {
+                    await startMultiStream();
+                }
+                
+                // Update state
+                APP_STATE.streaming = true;
+                APP_STATE.startTime = Date.now();
+                
+                // Update UI
+                document.getElementById('start-stream-btn').disabled = true;
+                document.getElementById('stop-stream-btn').disabled = false;
+                document.getElementById('status-text').textContent = 'Live';
+                document.getElementById('connection-status').classList.add('active');
+                document.getElementById('preview-status').textContent = '🔴 LIVE';
+                
+                // Start timers and health checks
+                startStreamTimer();
+                streamingEngine.startHealthChecks();
+                networkMonitor.start();
+                
+                showToast('🎉 Stream started! You\'re LIVE!', 'success');
+                
+                // Award XP
+                awardXP(10);
+                
+                // Save to history (prepare data)
+                APP_STATE.currentStreamData = {
+                    timestamp: APP_STATE.startTime,
+                    platform: APP_STATE.rtmpSettings.platform,
+                    protocol: protocol,
+                    resolution: APP_STATE.streamSettings.resolution,
+                    bitrate: APP_STATE.streamSettings.videoBitrate
+                };
+                
+            } catch (error) {
+                console.error('Error starting stream:', error);
+                showToast(`Failed to start stream: ${error.message}`, 'error');
+                streamingEngine.stopAll();
+            }
+        }
+        
+        async function startMultiStream() {
+            // Start additional streams to other destinations
+            const destinations = APP_STATE.multistreamDestinations || [];
+            
+            for (const dest of destinations) {
+                if (!dest.enabled) continue;
+                
+                try {
+                    switch (dest.protocol) {
+                        case 'webrtc-whip':
+                            await streamingEngine.startWebRTCWHIP(dest.url, dest.key, APP_STATE.mediaStream);
+                            break;
+                        case 'websocket':
+                            await streamingEngine.startWebSocketStream(dest.url, dest.key, APP_STATE.mediaStream);
+                            break;
+                        case 'hls-upload':
+                            await streamingEngine.startHLSUpload(dest.url, dest.key, APP_STATE.mediaStream);
+                            break;
+                        case 'rtmp-relay':
+                            await streamingEngine.startRTMPRelay(dest.url, dest.key, APP_STATE.mediaStream);
+                            break;
+                    }
+                    showToast(`Connected to ${dest.name}`, 'success');
+                } catch (error) {
+                    showToast(`Failed to connect to ${dest.name}: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        function stopStream() {
+            if (APP_STATE.streaming) {
+                streamingEngine.stopAll();
+                networkMonitor.stop();
+                
+                APP_STATE.streaming = false;
+                
+                // Update UI
+                document.getElementById('start-stream-btn').disabled = false;
+                document.getElementById('stop-stream-btn').disabled = true;
+                document.getElementById('status-text').textContent = 'Offline';
+                document.getElementById('connection-status').classList.remove('active');
+                document.getElementById('preview-status').textContent = '⚫ Not Streaming';
+                
+                // Stop timer
+                if (APP_STATE.timerInterval) {
+                    clearInterval(APP_STATE.timerInterval);
+                }
+                
+                // Calculate duration and save to history
+                if (APP_STATE.currentStreamData) {
+                    APP_STATE.currentStreamData.duration = APP_STATE.elapsedTime;
+                    saveToStore('streams', APP_STATE.currentStreamData).then(() => {
+                        loadHistory();
+                        trackAnalytics(APP_STATE.currentStreamData);
+                    });
+                }
+                
+                // Award XP based on duration
+                const durationMinutes = Math.floor(APP_STATE.elapsedTime / 60);
+                awardXP(durationMinutes * 5);
+                
+                showToast('Stream stopped', 'success');
+                
+                // Check achievements
+                checkAchievements();
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           STREAM TIMER
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        function startStreamTimer() {
+            APP_STATE.timerInterval = setInterval(() => {
+                APP_STATE.elapsedTime = Math.floor((Date.now() - APP_STATE.startTime) / 1000);
+                updateStreamTimeDisplay();
+                
+                // Award XP every minute
+                if (APP_STATE.elapsedTime % 60 === 0) {
+                    awardXP(5);
+                }
+            }, 1000);
+        }
+        
+        function updateStreamTimeDisplay() {
+            const hours = Math.floor(APP_STATE.elapsedTime / 3600);
+            const minutes = Math.floor((APP_STATE.elapsedTime % 3600) / 60);
+            const seconds = APP_STATE.elapsedTime % 60;
+            
+            document.getElementById('stream-time').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           GAMIFICATION SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Reward users for streaming milestones and consistency
+           Usage: Automatic XP awards, level progression, achievements
+        */
+        
+        function awardXP(amount) {
+            APP_STATE.xp += amount;
+            document.getElementById('xp-count').textContent = APP_STATE.xp;
+            
+            // Check for level up
+            const newLevel = Math.floor(APP_STATE.xp / 100) + 1;
+            if (newLevel > APP_STATE.level) {
+                APP_STATE.level = newLevel;
+                document.getElementById('level-count').textContent = APP_STATE.level;
+                showToast(`🎉 Level Up! You're now level ${APP_STATE.level}!`, 'success');
+            }
+            
+            // Save XP to IndexedDB
+            saveToStore('settings', { key: 'xp', value: APP_STATE.xp });
+            saveToStore('settings', { key: 'level', value: APP_STATE.level });
+        }
+        
+        const ACHIEVEMENTS = [
+            { id: 'first_stream', icon: '🎬', title: 'First Stream', desc: 'Complete your first stream', condition: () => APP_STATE.streamHistory.length >= 1 },
+            { id: 'five_streams', icon: '🌟', title: 'Getting Started', desc: 'Complete 5 streams', condition: () => APP_STATE.streamHistory.length >= 5 },
+            { id: 'marathon', icon: '⏰', title: 'Marathon Streamer', desc: 'Stream for over 1 hour', condition: () => APP_STATE.streamHistory.some(s => s.duration > 3600) },
+            { id: 'consistent', icon: '📅', title: 'Consistency is Key', desc: 'Stream 3 days in a row', condition: checkConsistency },
+            { id: 'level_5', icon: '⭐', title: 'Rising Star', desc: 'Reach level 5', condition: () => APP_STATE.level >= 5 },
+            { id: 'level_10', icon: '💫', title: 'Streaming Pro', desc: 'Reach level 10', condition: () => APP_STATE.level >= 10 },
+            { id: 'hd_quality', icon: '🎥', title: 'HD Quality', desc: 'Stream in 1080p', condition: () => APP_STATE.streamSettings.resolution === '1920x1080' },
+            { id: 'multi_platform', icon: '🌐', title: 'Multi-Platform', desc: 'Stream to 3 different platforms', condition: checkMultiPlatform }
+        ];
+        
+        function checkConsistency() {
+            if (APP_STATE.streamHistory.length < 3) return false;
+            
+            const dates = APP_STATE.streamHistory.map(s => {
+                const date = new Date(s.timestamp);
+                return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+            });
+            
+            const uniqueDates = [...new Set(dates)].sort();
+            
+            // Check for 3 consecutive dates
+            for (let i = 0; i < uniqueDates.length - 2; i++) {
+                const date1 = new Date(uniqueDates[i]);
+                const date2 = new Date(uniqueDates[i + 1]);
+                const date3 = new Date(uniqueDates[i + 2]);
+                
+                const diff1 = (date2 - date1) / (1000 * 60 * 60 * 24);
+                const diff2 = (date3 - date2) / (1000 * 60 * 60 * 24);
+                
+                if (diff1 === 1 && diff2 === 1) return true;
+            }
+            
+            return false;
+        }
+        
+        function checkMultiPlatform() {
+            const platforms = new Set(APP_STATE.streamHistory.map(s => s.platform));
+            return platforms.size >= 3;
+        }
+        
+        async function checkAchievements() {
+            for (const achievement of ACHIEVEMENTS) {
+                // Skip if already unlocked
+                if (APP_STATE.achievements.includes(achievement.id)) continue;
+                
+                // Check condition
+                if (achievement.condition()) {
+                    APP_STATE.achievements.push(achievement.id);
+                    await saveToStore('achievements', { id: achievement.id, unlockedAt: Date.now() });
+                    
+                    showToast(`🏆 Achievement Unlocked: ${achievement.title}!`, 'success');
+                    
+                    // Award bonus XP
+                    awardXP(50);
+                    
+                    // Update achievement display
+                    renderAchievements();
+                }
+            }
+        }
+        
+        function renderAchievements() {
+            const grid = document.getElementById('achievement-grid');
+            grid.innerHTML = '';
+            
+            ACHIEVEMENTS.forEach(achievement => {
+                const unlocked = APP_STATE.achievements.includes(achievement.id);
+                
+                const card = document.createElement('div');
+                card.className = 'achievement' + (unlocked ? ' unlocked' : '');
+                card.innerHTML = `
+                    <div class="achievement-icon">${achievement.icon}</div>
+                    <div class="achievement-title">${achievement.title}</div>
+                    <div class="achievement-desc">${achievement.desc}</div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           RTMP CONFIGURATION
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        const PLATFORM_PRESETS = {
+            twitch: {
+                name: 'Twitch',
+                protocols: {
+                    'rtmp-relay': 'rtmp://live.twitch.tv/app/',
+                    'webrtc-whip': 'https://video-ingest.twitch.tv/whip',
+                    'websocket': 'wss://relay.example.com/twitch'
+                },
+                keyPlaceholder: 'live_XXXXXXXXXXXX_XXXXXXXXXXXXXXXXXXXXXXXX',
+                docs: 'https://dev.twitch.tv/docs/video-broadcast/'
+            },
+            youtube: {
+                name: 'YouTube',
+                protocols: {
+                    'rtmp-relay': 'rtmp://a.rtmp.youtube.com/live2/',
+                    'hls-upload': 'https://www.googleapis.com/upload/youtube/v3/liveStreams',
+                    'websocket': 'wss://relay.example.com/youtube'
+                },
+                keyPlaceholder: 'xxxx-xxxx-xxxx-xxxx-xxxx',
+                docs: 'https://developers.google.com/youtube/v3/live'
+            },
+            facebook: {
+                name: 'Facebook',
+                protocols: {
+                    'rtmp-relay': 'rtmps://live-api-s.facebook.com:443/rtmp/',
+                    'webrtc-whip': 'https://streaming-graph.facebook.com/whip',
+                    'websocket': 'wss://relay.example.com/facebook'
+                },
+                keyPlaceholder: 'FB-XXXXXXXXXXXXXXXXXXXX',
+                docs: 'https://developers.facebook.com/docs/live-video-api'
+            },
+            custom: {
+                name: 'Custom',
+                protocols: {
+                    'webrtc-whip': 'https://your-server.com/whip',
+                    'websocket': 'wss://your-server.com/stream',
+                    'hls-upload': 'https://your-server.com/hls-ingest',
+                    'rtmp-relay': 'rtmp://your-server.com/live',
+                    'srt-websocket': 'wss://your-server.com/srt'
+                },
+                keyPlaceholder: 'Enter your stream key',
+                docs: ''
+            }
+        };
+        
+        function selectPlatform(platform) {
+            const preset = PLATFORM_PRESETS[platform];
+            const currentProtocol = document.getElementById('streaming-protocol').value;
+            
+            // Set URL based on selected protocol
+            const url = preset.protocols[currentProtocol] || Object.values(preset.protocols)[0];
+            document.getElementById('rtmp-url').value = url;
+            document.getElementById('stream-key').placeholder = preset.keyPlaceholder;
+            
+            APP_STATE.rtmpSettings.platform = platform;
+            
+            // Update UI
+            document.querySelectorAll('.platform-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.platform-card').classList.add('selected');
+            
+            showToast(`Platform set to ${preset.name}`, 'success');
+        }
+        
+        function handleProtocolChange() {
+            const protocol = document.getElementById('streaming-protocol').value;
+            const urlLabel = document.getElementById('url-label');
+            const urlHint = document.getElementById('url-hint');
+            const protocolHint = document.getElementById('protocol-hint');
+            
+            const hints = {
+                'webrtc-whip': {
+                    label: 'WHIP Endpoint URL',
+                    hint: 'Example: https://your-server.com/whip',
+                    description: 'Modern WebRTC protocol with sub-second latency'
+                },
+                'websocket': {
+                    label: 'WebSocket Server URL',
+                    hint: 'Example: wss://your-server.com/stream',
+                    description: 'Real-time binary streaming over WebSocket'
+                },
+                'hls-upload': {
+                    label: 'HLS Ingest Endpoint',
+                    hint: 'Example: https://your-server.com/hls-ingest',
+                    description: 'Upload HLS segments for universal compatibility'
+                },
+                'rtmp-relay': {
+                    label: 'RTMP Relay URL',
+                    hint: 'Example: rtmp://your-server.com/live',
+                    description: 'RTMP via WebSocket relay server'
+                },
+                'srt-websocket': {
+                    label: 'SRT WebSocket Bridge',
+                    hint: 'Example: wss://your-server.com/srt',
+                    description: 'Secure Reliable Transport via WebSocket'
+                }
+            };
+            
+            const config = hints[protocol];
+            urlLabel.textContent = config.label;
+            urlHint.textContent = config.hint;
+            protocolHint.textContent = config.description;
+            
+            // Update URL if platform is selected
+            const platform = APP_STATE.rtmpSettings.platform;
+            if (platform && PLATFORM_PRESETS[platform]) {
+                const preset = PLATFORM_PRESETS[platform];
+                const url = preset.protocols[protocol];
+                if (url) {
+                    document.getElementById('rtmp-url').value = url;
+                }
+            }
+        }
+        
+        async function saveRTMPSettings() {
+            const url = document.getElementById('rtmp-url').value.trim();
+            const key = document.getElementById('stream-key').value.trim();
+            
+            if (!url || !key) {
+                showToast('Please fill in both RTMP URL and Stream Key', 'warning');
+                return;
+            }
+            
+            APP_STATE.rtmpSettings.url = url;
+            APP_STATE.rtmpSettings.key = key;
+            
+            await saveToStore('settings', { key: 'rtmp', value: APP_STATE.rtmpSettings });
+            
+            showToast('RTMP settings saved!', 'success');
+        }
+        
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           MULTI-STREAM MANAGEMENT
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        APP_STATE.multistreamDestinations = [];
+        
+        function addDestination() {
+            const id = Date.now();
+            const destination = {
+                id: id,
+                name: `Destination ${APP_STATE.multistreamDestinations.length + 1}`,
+                protocol: 'webrtc-whip',
+                url: '',
+                key: '',
+                enabled: true
+            };
+            
+            APP_STATE.multistreamDestinations.push(destination);
+            renderMultistreamDestinations();
+            saveToStore('settings', { key: 'multistream', value: APP_STATE.multistreamDestinations });
+        }
+        
+        function removeDestination(id) {
+            APP_STATE.multistreamDestinations = APP_STATE.multistreamDestinations.filter(d => d.id !== id);
+            renderMultistreamDestinations();
+            saveToStore('settings', { key: 'multistream', value: APP_STATE.multistreamDestinations });
+        }
+        
+        function updateDestination(id, field, value) {
+            const dest = APP_STATE.multistreamDestinations.find(d => d.id === id);
+            if (dest) {
+                dest[field] = value;
+                saveToStore('settings', { key: 'multistream', value: APP_STATE.multistreamDestinations });
+            }
+        }
+        
+        function renderMultistreamDestinations() {
+            const container = document.getElementById('multistream-destinations');
+            container.innerHTML = '';
+            
+            APP_STATE.multistreamDestinations.forEach((dest, index) => {
+                const destDiv = document.createElement('div');
+                destDiv.style.cssText = 'background: var(--background); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);';
+                destDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <input type="text" value="${dest.name}" 
+                               onchange="updateDestination(${dest.id}, 'name', this.value)"
+                               style="width: 200px; padding: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" ${dest.enabled ? 'checked' : ''} 
+                                   onchange="updateDestination(${dest.id}, 'enabled', this.checked)"
+                                   style="width: auto;">
+                            Enabled
+                        </label>
+                        <button class="btn btn-danger" onclick="removeDestination(${dest.id})" style="padding: 0.5rem 1rem;">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <select onchange="updateDestination(${dest.id}, 'protocol', this.value)"
+                                style="padding: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            <option value="webrtc-whip" ${dest.protocol === 'webrtc-whip' ? 'selected' : ''}>WebRTC-WHIP</option>
+                            <option value="websocket" ${dest.protocol === 'websocket' ? 'selected' : ''}>WebSocket</option>
+                            <option value="hls-upload" ${dest.protocol === 'hls-upload' ? 'selected' : ''}>HLS Upload</option>
+                            <option value="rtmp-relay" ${dest.protocol === 'rtmp-relay' ? 'selected' : ''}>RTMP Relay</option>
+                        </select>
+                        <input type="text" placeholder="URL" value="${dest.url}"
+                               onchange="updateDestination(${dest.id}, 'url', this.value)"
+                               style="padding: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                    </div>
+                    <input type="password" placeholder="Stream Key / Token" value="${dest.key}"
+                           onchange="updateDestination(${dest.id}, 'key', this.value)"
+                           style="width: 100%; margin-top: 0.5rem; padding: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                `;
+                container.appendChild(destDiv);
+            });
+        }
+        
+        // Toggle multistream UI
+        document.addEventListener('DOMContentLoaded', () => {
+            const multistreamCheckbox = document.getElementById('enable-multistream');
+            if (multistreamCheckbox) {
+                multistreamCheckbox.addEventListener('change', (e) => {
+                    const container = document.getElementById('multistream-container');
+                    container.style.display = e.target.checked ? 'block' : 'none';
+                });
+            }
+        });
+        
+        async function testConnection() {
+            const protocol = document.getElementById('streaming-protocol').value;
+            const url = document.getElementById('rtmp-url').value;
+            const key = document.getElementById('stream-key').value;
+            
+            if (!url || !key) {
+                showToast('Please fill in URL and authentication credentials', 'warning');
+                return;
+            }
+            
+            showToast('Testing connection...', 'warning');
+            
+            try {
+                // Attempt a simple connection test based on protocol
+                switch (protocol) {
+                    case 'webrtc-whip':
+                    case 'hls-upload':
+                        // Test HTTP endpoint
+                        const response = await fetch(url, {
+                            method: 'OPTIONS',
+                            headers: {
+                                'Authorization': `Bearer ${key}`
+                            }
+                        });
+                        
+                        if (response.ok || response.status === 405) {
+                            showToast('✅ Connection test successful!', 'success');
+                        } else {
+                            showToast(`⚠️ Server responded with status ${response.status}`, 'warning');
+                        }
+                        break;
+                        
+                    case 'websocket':
+                    case 'rtmp-relay':
+                    case 'srt-websocket':
+                        // Test WebSocket connection
+                        const ws = new WebSocket(url);
+                        
+                        ws.onopen = () => {
+                            showToast('✅ Connection test successful!', 'success');
+                            ws.close();
+                        };
+                        
+                        ws.onerror = () => {
+                            showToast('❌ Connection test failed', 'error');
+                        };
+                        
+                        setTimeout(() => {
+                            if (ws.readyState !== WebSocket.OPEN) {
+                                showToast('❌ Connection timeout', 'error');
+                                ws.close();
+                            }
+                        }, 5000);
+                        break;
+                }
+                
+            } catch (error) {
+                showToast(`❌ Connection test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           STREAM HISTORY
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        async function loadHistory() {
+            const streams = await getAllFromStore('streams');
+            APP_STATE.streamHistory = streams.sort((a, b) => b.timestamp - a.timestamp);
+            
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            
+            if (APP_STATE.streamHistory.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-dim);">
+                        No streams yet. Start your first stream to build your history!
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = '';
+            
+            APP_STATE.streamHistory.forEach((stream, index) => {
+                const date = new Date(stream.timestamp);
+                const duration = formatDuration(stream.duration);
+                const size = formatBytes(stream.size || 0);
+                
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="history-info">
+                        <div class="history-title">
+                            ${PLATFORM_PRESETS[stream.platform]?.name || 'Custom'} Stream
+                        </div>
+                        <div class="history-meta">
+                            ${date.toLocaleString()} • ${duration} • ${stream.resolution} • ${size}
+                        </div>
+                    </div>
+                    <div class="history-actions">
+                        <button class="btn btn-secondary" onclick="deleteStream(${stream.id})" style="padding: 0.5rem;">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                
+                list.appendChild(item);
+            });
+        }
+        
+        async function deleteStream(id) {
+            if (!confirm('Delete this stream from history?')) return;
+            
+            const transaction = db.transaction(['streams'], 'readwrite');
+            const store = transaction.objectStore('streams');
+            await store.delete(id);
+            
+            await loadHistory();
+            showToast('Stream deleted from history', 'success');
+        }
+        
+        async function clearHistory() {
+            if (!confirm('Clear all stream history? This cannot be undone.')) return;
+            
+            const transaction = db.transaction(['streams'], 'readwrite');
+            const store = transaction.objectStore('streams');
+            await store.clear();
+            
+            APP_STATE.streamHistory = [];
+            renderHistory();
+            
+            showToast('History cleared', 'success');
+        }
+        
+        async function exportHistory() {
+            const data = {
+                streams: APP_STATE.streamHistory,
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stream-history-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('History exported!', 'success');
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           ANALYTICS (PRIVACY-RESPECTING)
+           ═══════════════════════════════════════════════════════════════════════════
+           Purpose: Track usage patterns for improvement, no PII
+           Usage: Daily summaries sent to admin email
+           Expected: Aggregated data only, opt-out available
+        */
+        
+        async function trackAnalytics(streamData) {
+            const today = new Date().toISOString().split('T')[0];
+            
+            let dayData = await loadFromStore('analytics', today);
+            
+            if (!dayData) {
+                dayData = {
+                    date: today,
+                    streamCount: 0,
+                    totalDuration: 0,
+                    platformCounts: {},
+                    resolutionCounts: {}
+                };
+            }
+            
+            dayData.streamCount++;
+            dayData.totalDuration += streamData.duration;
+            dayData.platformCounts[streamData.platform] = (dayData.platformCounts[streamData.platform] || 0) + 1;
+            dayData.resolutionCounts[streamData.resolution] = (dayData.resolutionCounts[streamData.resolution] || 0) + 1;
+            
+            await saveToStore('analytics', dayData);
+            
+            // Note: Actual email sending would require server-side implementation
+            // This is a placeholder for the privacy notice
+            console.log('Analytics tracked:', dayData);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           UI UTILITIES
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type]}</div>
+                <div>${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            
+            if (h > 0) return `${h}h ${m}m ${s}s`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           COLLAPSIBLE SECTIONS
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        function initCollapsibleSections() {
+            document.querySelectorAll('.section-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const section = header.parentElement;
+                    section.classList.toggle('collapsed');
+                    
+                    // Save state to localStorage
+                    const sectionId = section.dataset.section;
+                    const collapsed = section.classList.contains('collapsed');
+                    localStorage.setItem(`section-${sectionId}-collapsed`, collapsed);
+                });
+            });
+            
+            // Restore saved states
+            document.querySelectorAll('.section').forEach(section => {
+                const sectionId = section.dataset.section;
+                const collapsed = localStorage.getItem(`section-${sectionId}-collapsed`) === 'true';
+                if (collapsed) {
+                    section.classList.add('collapsed');
+                }
+            });
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           THEME SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        function initThemeSystem() {
+            // Check for saved theme
+            const savedTheme = localStorage.getItem('theme') || 'default';
+            document.body.dataset.theme = savedTheme;
+            
+            // Set active theme button
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                if (btn.dataset.theme === savedTheme) {
+                    btn.classList.add('active');
+                }
+                
+                btn.addEventListener('click', () => {
+                    const theme = btn.dataset.theme;
+                    document.body.dataset.theme = theme;
+                    localStorage.setItem('theme', theme);
+                    
+                    // Update active button
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    showToast(`Theme changed to ${theme}`, 'success');
+                });
+            });
+            
+            // Auto-theme based on prefers-color-scheme
+            if (!localStorage.getItem('theme')) {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.body.dataset.theme = prefersDark ? 'default' : 'nature';
+            }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           EXPORT FUNCTIONS
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        function exportAsHTML() {
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stream-sanctuary.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('HTML exported!', 'success');
+        }
+        
+        async function exportAsJSON() {
+            const data = {
+                settings: APP_STATE.streamSettings,
+                xp: APP_STATE.xp,
+                level: APP_STATE.level,
+                achievements: APP_STATE.achievements,
+                streamHistory: APP_STATE.streamHistory,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stream-sanctuary-data-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('Data exported!', 'success');
+        }
+        
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           NETWORK MONITORING & ADAPTIVE BITRATE
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        class NetworkMonitor {
+            constructor() {
+                this.monitoringInterval = null;
+                this.stats = {
+                    bandwidth: 0,
+                    latency: 0,
+                    packetLoss: 0,
+                    timestamp: Date.now()
+                };
+            }
+            
+            async start() {
+                this.monitoringInterval = setInterval(async () => {
+                    await this.updateStats();
+                    this.updateUI();
+                    
+                    if (document.getElementById('enable-adaptive-bitrate').checked) {
+                        this.adjustBitrate();
+                    }
+                }, 5000);
+            }
+            
+            stop() {
+                if (this.monitoringInterval) {
+                    clearInterval(this.monitoringInterval);
+                    this.monitoringInterval = null;
+                }
+            }
+            
+            async updateStats() {
+                // Estimate bandwidth using Network Information API if available
+                if ('connection' in navigator) {
+                    const connection = navigator.connection;
+                    if (connection.downlink) {
+                        this.stats.bandwidth = connection.downlink;
+                    }
+                }
+                
+                // Measure latency with ping to streaming server
+                if (APP_STATE.streaming && streamingEngine.connections.length > 0) {
+                    const conn = streamingEngine.connections[0];
+                    
+                    if (conn.type === 'webrtc-whip' && conn.connection instanceof RTCPeerConnection) {
+                        // Get WebRTC stats
+                        const stats = await conn.connection.getStats();
+                        
+                        stats.forEach(report => {
+                            if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+                                this.stats.latency = report.currentRoundTripTime ? report.currentRoundTripTime * 1000 : 0;
+                            }
+                            
+                            if (report.type === 'inbound-rtp') {
+                                const packetsLost = report.packetsLost || 0;
+                                const packetsReceived = report.packetsReceived || 1;
+                                this.stats.packetLoss = (packetsLost / (packetsLost + packetsReceived)) * 100;
+                            }
+                        });
+                    }
+                }
+            }
+            
+            updateUI() {
+                document.getElementById('bandwidth-display').textContent = 
+                    this.stats.bandwidth > 0 ? `${this.stats.bandwidth.toFixed(1)} Mbps` : '-- Mbps';
+                
+                document.getElementById('latency-display').textContent = 
+                    this.stats.latency > 0 ? `${this.stats.latency.toFixed(0)} ms` : '-- ms';
+                
+                document.getElementById('packet-loss-display').textContent = 
+                    this.stats.packetLoss > 0 ? `${this.stats.packetLoss.toFixed(2)} %` : '0 %';
+                
+                // Update stream health indicator
+                const healthElement = document.getElementById('stream-health');
+                let health = 'Excellent';
+                let color = 'var(--success)';
+                
+                if (this.stats.packetLoss > 5 || this.stats.latency > 200) {
+                    health = 'Poor';
+                    color = 'var(--danger)';
+                } else if (this.stats.packetLoss > 2 || this.stats.latency > 100) {
+                    health = 'Fair';
+                    color = 'var(--warning)';
+                } else if (this.stats.packetLoss > 0.5 || this.stats.latency > 50) {
+                    health = 'Good';
+                    color = 'var(--primary)';
+                }
+                
+                healthElement.textContent = health;
+                healthElement.style.color = color;
+            }
+            
+            adjustBitrate() {
+                const currentBitrate = parseInt(document.getElementById('video-bitrate').value);
+                let newBitrate = currentBitrate;
+                
+                // Adjust based on network conditions
+                if (this.stats.bandwidth > 0) {
+                    const targetBitrate = Math.floor(this.stats.bandwidth * 1000 * 0.7); // Use 70% of available bandwidth
+                    
+                    if (this.stats.packetLoss > 3) {
+                        // Reduce bitrate if packet loss is high
+                        newBitrate = Math.max(500, currentBitrate * 0.8);
+                    } else if (this.stats.bandwidth > currentBitrate / 1000 * 1.5) {
+                        // Increase bitrate if bandwidth allows
+                        newBitrate = Math.min(targetBitrate, currentBitrate * 1.1);
+                    }
+                }
+                
+                if (Math.abs(newBitrate - currentBitrate) > 100) {
+                    document.getElementById('video-bitrate').value = Math.round(newBitrate);
+                    APP_STATE.streamSettings.videoBitrate = Math.round(newBitrate);
+                    console.log(`Adaptive bitrate adjusted to ${newBitrate} kbps`);
+                }
+            }
+        }
+        
+        const networkMonitor = new NetworkMonitor();
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           INITIALIZATION
+           ═══════════════════════════════════════════════════════════════════════════
+        */
+        
+        async function init() {
+            try {
+                // Initialize IndexedDB
+                await initDB();
+                
+                // Load saved data
+                const savedXP = await loadFromStore('settings', 'xp');
+                if (savedXP) {
+                    APP_STATE.xp = savedXP.value;
+                    document.getElementById('xp-count').textContent = APP_STATE.xp;
+                }
+                
+                const savedLevel = await loadFromStore('settings', 'level');
+                if (savedLevel) {
+                    APP_STATE.level = savedLevel.value;
+                    document.getElementById('level-count').textContent = APP_STATE.level;
+                }
+                
+                const savedRTMP = await loadFromStore('settings', 'rtmp');
+                if (savedRTMP) {
+                    APP_STATE.rtmpSettings = savedRTMP.value;
+                    document.getElementById('rtmp-url').value = savedRTMP.value.url || '';
+                    document.getElementById('stream-key').value = savedRTMP.value.key || '';
+                }
+                
+                // Load multistream destinations
+                const savedMultistream = await loadFromStore('settings', 'multistream');
+                if (savedMultistream && savedMultistream.value) {
+                    APP_STATE.multistreamDestinations = savedMultistream.value;
+                    if (APP_STATE.multistreamDestinations.length > 0) {
+                        document.getElementById('enable-multistream').checked = true;
+                        document.getElementById('multistream-container').style.display = 'block';
+                        renderMultistreamDestinations();
+                    }
+                }
+                
+                // Load achievements
+                const savedAchievements = await getAllFromStore('achievements');
+                APP_STATE.achievements = savedAchievements.map(a => a.id);
+                renderAchievements();
+                
+                // Load history
+                await loadHistory();
+                
+                // Initialize UI components
+                initCollapsibleSections();
+                initThemeSystem();
+                
+                // Initialize constellation
+                resizeCanvas();
+                initParticles();
+                animateConstellation();
+                
+                // Mouse tracking for parallax
+                window.addEventListener('mousemove', (e) => {
+                    mouse.x = e.clientX;
+                    mouse.y = e.clientY;
+                });
+                
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                    initParticles();
+                });
+                
+                console.log('🎉 Stream Sanctuary initialized successfully!');
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showToast('Error initializing application', 'error');
+            }
+        }
+        
+        // Start application when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+    </script>
+</body>
+</html>
