@@ -1598,11 +1598,10 @@ Full license text available in LICENSE file.
 
 ## 📞 SUPPORT & COMMUNITY
 
-- **Documentation:** https://docs.stream-sanctuary.app
-- **Discord:** https://discord.gg/stream-sanctuary
-- **GitHub:** https://github.com/stream-sanctuary/platform
-- **Email:** support@stream-sanctuary.app
-- **Twitter:** @StreamSanctuary
+- **Documentation:** https://docs.stream_sanctuary/planetaryrestorationarchive.com/
+- **Discord:** https://discord.gg/symbiote001
+- **GitHub:** https://github.com/therickyfoster/stream_sanctuary
+- **Email:** streamsanctuary@planetaryrestorationarchive.com
 
 ---
 
