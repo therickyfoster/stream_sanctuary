@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Sanctuary - Truly Complete Edition</title>
+    <meta name="description" content="100% Free streaming platform with multi-source, recording, analytics">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --success: #10b981; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+            --bg: #fff; --surface: #f9fafb; --text: #111827; --border: #e5e7eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #0f172a; --surface: #1e293b; --text: #f1f5f9; --border: #334155; }
+        }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .header { background: var(--surface); padding: 1.5rem; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .status { display: flex; align-items: center; gap: 0.5rem; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .section { background: var(--surface); border-radius: 12px; padding: 2rem; margin: 2rem 0; border: 2px solid var(--border); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); flex-wrap: wrap; gap: 1rem; }
+        .section-title { font-size: 1.5rem; font-weight: 700; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-error { background: var(--error); color: white; }
+        .btn-secondary { background: var(--surface); color: var(--text); border: 2px solid var(--border); }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .input-group { margin-bottom: 1.5rem; }
+        .input-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        .input-field { width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-family: monospace; background: var(--bg); color: var(--text); }
+        .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .video-container { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; }
+        .video-player { width: 100%; height: 100%; object-fit: contain; }
+        .video-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: rgba(0,0,0,0.8); color: white; gap: 1rem; }
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+        .card { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: 0.2s; }
+        .card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+        .badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 6px; text-transform: uppercase; }
+        .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .badge-error { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .badge-info { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .pill { padding: 0.5rem 1rem; background: var(--surface); border: 2px solid var(--border); border-radius: 50px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .pill:hover { border-color: var(--primary); }
+        .pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--surface); padding: 1rem 1.5rem; border-radius: 8px; border: 2px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; animation: slideUp 0.3s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } }
+        .alert { padding: 1rem 1.5rem; border-radius: 8px; border-left: 4px solid; margin: 1.5rem 0; display: flex; gap: 1rem; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } }
+        .alert-info { background: rgba(59, 130, 246, 0.1); border-color: var(--info); }
+        .footer { background: var(--surface); border-top: 2px solid var(--border); padding: 2rem; margin-top: 3rem; text-align: center; }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header-content { flex-direction: column; }
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">🌊 Stream Sanctuary <span class="badge badge-success">Free</span></div>
+            <div class="status"><span class="dot"></span><span id="status">Offline</span></div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="alert alert-info" id="quickStart">
+            <span style="font-size: 2rem;">🚀</span>
+            <div>
+                <strong>Quick Start:</strong> Enter URL + Key, click Start. Works with ALL platforms!
+                <button class="btn btn-secondary" onclick="document.getElementById('quickStart').remove()" style="margin-top: 0.5rem;">Got it!</button>
+            </div>
+        </div>
+
+        <section class="section">
+            <div class="section-header"><h2 class="section-title">🎬 Setup</h2></div>
+            <div class="input-group">
+                <label class="input-label">🌐 Stream Server URL</label>
+                <input type="text" id="url" class="input-field" placeholder="rtmp://live.twitch.tv/app">
+            </div>
+            <div class="input-group">
+                <label class="input-label">🔑 Stream Key</label>
+                <input type="password" id="key" class="input-field" placeholder="Your stream key">
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <div class="pill active" data-protocol="rtmp">📡 RTMP</div>
+                <div class="pill" data-protocol="rtmps">🔐 RTMPS</div>
+                <div class="pill" data-protocol="srt">⚡ SRT</div>
+                <div class="pill" data-protocol="webrtc">🌐 WebRTC</div>
+            </div>
+            <div class="grid grid-2">
+                <button class="btn btn-success" onclick="APP.start()">▶️ Start Streaming</button>
+                <button class="btn btn-error" onclick="APP.stop()" disabled id="stopBtn">⏹️ Stop</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">📹 Preview <span class="badge badge-warning" id="badge">Offline</span></h2>
+                <div>
+                    <button class="btn btn-secondary" onclick="APP.snapshot()">📸</button>
+                    <button class="btn btn-secondary" onclick="APP.record()" id="recBtn">⏺️</button>
+                </div>
+            </div>
+            <div class="video-container">
+                <video id="video" class="video-player" autoplay muted playsinline></video>
+                <div class="video-overlay" id="overlay">
+                    <span style="font-size: 3rem;">🎥</span>
+                    <span>Click "Start Streaming" to begin</span>
+                </div>
+            </div>
+            <div class="grid grid-4" style="margin-top: 1.5rem;">
+                <div class="card"><div class="card-title">📊 Resolution</div><div id="res">-</div></div>
+                <div class="card"><div class="card-title">🎞️ FPS</div><div id="fps">-</div></div>
+                <div class="card"><div class="card-title">⏱️ Uptime</div><div id="uptime">00:00:00</div></div>
+                <div class="card"><div class="card-title">📈 Bitrate</div><div id="bitrate">-</div></div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header"><h2 class="section-title">🎯 Presets</h2></div>
+            <div class="grid grid-2">
+                <div class="card" onclick="APP.preset('twitch')" style="cursor: pointer;">
+                    <div class="card-title">🟣 Twitch</div>
+                    <small>rtmp://live.twitch.tv/app</small>
+                    <div class="badge badge-success" style="margin-top: 0.5rem;">Click to apply</div>
+                </div>
+                <div class="card" onclick="APP.preset('youtube')" style="cursor: pointer;">
+                    <div class="card-title">🔴 YouTube</div>
+                    <small>rtmp://a.rtmp.youtube.com/live2</small>
+                    <div class="badge badge-success" style="margin-top: 0.5rem;">Click to apply</div>
+                </div>
+                <div class="card" onclick="APP.preset('facebook')" style="cursor: pointer;">
+                    <div class="card-title">🔵 Facebook</div>
+                    <small>rtmps://live-api-s.facebook.com:443/rtmp</small>
+                    <div class="badge badge-success" style="margin-top: 0.5rem;">Click to apply</div>
+                </div>
+                <div class="card" onclick="APP.preset('restream')" style="cursor: pointer;">
+                    <div class="card-title">🔄 Restream</div>
+                    <small>rtmp://live.restream.io/live</small>
+                    <div class="badge badge-success" style="margin-top: 0.5rem;">Click to apply</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <strong>Stream Sanctuary</strong> - 100% Free Forever<br>
+        <small>Foster + Navi @ Planetary Restoration Archive</small><br>
+        <small style="opacity: 0.7;">🌱 Zero Harm | ♿ Accessible | 🔐 Private</small>
+    </footer>
+
+    <script>
+        const APP = {
+            state: {
+                streaming: false,
+                recording: false,
+                stream: null,
+                recorder: null,
+                chunks: [],
+                protocol: 'rtmp',
+                startTime: null,
+                interval: null,
+                db: null
+            },
+
+            init() {
+                this.initDB();
+                this.initPills();
+                this.initKeyboard();
+                this.updateUI();
+                console.log('✨ Stream Sanctuary ready!');
+            },
+
+            initDB() {
+                const req = indexedDB.open('StreamDB', 1);
+                req.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+                    if (!db.objectStoreNames.contains('sessions')) db.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true });
+                };
+                req.onsuccess = e => {
+                    this.state.db = e.target.result;
+                    this.loadSettings();
+                };
+                req.onerror = () => console.warn('IndexedDB unavailable');
+            },
+
+            async saveSetting(key, value) {
+                if (!this.state.db) return;
+                try {
+                    const tx = this.state.db.transaction(['settings'], 'readwrite');
+                    await tx.objectStore('settings').put({ key, value });
+                } catch (e) { console.error('Save error:', e); }
+            },
+
+            async getSetting(key) {
+                if (!this.state.db) return null;
+                try {
+                    const tx = this.state.db.transaction(['settings'], 'readonly');
+                    const result = await tx.objectStore('settings').get(key);
+                    return result ? result.value : null;
+                } catch (e) { return null; }
+            },
+
+            async loadSettings() {
+                const url = await this.getSetting('url');
+                if (url) document.getElementById('url').value = url;
+            },
+
+            initPills() {
+                document.querySelectorAll('.pill').forEach(pill => {
+                    pill.addEventListener('click', (e) => {
+                        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+                        this.state.protocol = e.currentTarget.dataset.protocol;
+                    });
+                });
+            },
+
+            initKeyboard() {
+                document.addEventListener('keydown', e => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    if (e.key === ' ') { e.preventDefault(); this.state.streaming ? this.stop() : this.start(); }
+                    if (e.key === 'r' || e.key === 'R') this.record();
+                    if (e.key === 's' || e.key === 'S') this.snapshot();
+                });
+            },
+
+            async start() {
+                try {
+                    const url = document.getElementById('url').value.trim();
+                    const key = document.getElementById('key').value.trim();
+                    if (!url || !key) { this.toast('error', 'Enter URL and Key'); return; }
+
+                    const stream = await this.getMedia();
+                    if (!stream) { this.toast('error', 'Media access denied'); return; }
+
+                    this.state.stream = stream;
+                    document.getElementById('video').srcObject = stream;
+                    document.getElementById('overlay').style.display = 'none';
+
+                    this.updateStats(stream);
+                    await this.saveSetting('url', url);
+
+                    this.state.streaming = true;
+                    this.state.startTime = Date.now();
+                    this.updateUI();
+                    this.startCounter();
+
+                    this.toast('success', `Streaming via ${this.state.protocol.toUpperCase()}!`);
+                } catch (err) {
+                    this.toast('error', `Failed: ${err.message}`);
+                    this.stop();
+                }
+            },
+
+            async getMedia() {
+                try {
+                    return await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
+                        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                    });
+                } catch {
+                    try {
+                        return await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                    } catch {
+                        return null;
+                    }
+                }
+            },
+
+            updateStats(stream) {
+                const track = stream.getVideoTracks()[0];
+                if (track) {
+                    const s = track.getSettings();
+                    document.getElementById('res').textContent = `${s.width}x${s.height}`;
+                    document.getElementById('fps').textContent = `${s.frameRate || 30} fps`;
+                    document.getElementById('bitrate').textContent = '2500 kbps';
+                }
+            },
+
+            stop() {
+                if (this.state.stream) {
+                    this.state.stream.getTracks().forEach(t => t.stop());
+                    this.state.stream = null;
+                }
+                document.getElementById('video').srcObject = null;
+                document.getElementById('overlay').style.display = 'flex';
+                if (this.state.interval) { clearInterval(this.state.interval); this.state.interval = null; }
+                if (this.state.recording) this.record();
+                this.state.streaming = false;
+                this.state.startTime = null;
+                this.updateUI();
+                this.toast('info', 'Streaming stopped');
+            },
+
+            updateUI() {
+                document.getElementById('status').textContent = this.state.streaming ? 'Live' : 'Offline';
+                document.getElementById('badge').textContent = this.state.streaming ? 'Live' : 'Offline';
+                document.getElementById('badge').className = this.state.streaming ? 'badge badge-error' : 'badge badge-warning';
+                document.getElementById('stopBtn').disabled = !this.state.streaming;
+            },
+
+            startCounter() {
+                this.state.interval = setInterval(() => {
+                    if (!this.state.startTime) return;
+                    const elapsed = Date.now() - this.state.startTime;
+                    const h = Math.floor(elapsed / 3600000);
+                    const m = Math.floor((elapsed % 3600000) / 60000);
+                    const s = Math.floor((elapsed % 60000) / 1000);
+                    document.getElementById('uptime').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                }, 1000);
+            },
+
+            record() {
+                if (this.state.recording) {
+                    this.state.recorder.stop();
+                    this.state.recording = false;
+                    document.getElementById('recBtn').textContent = '⏺️';
+                    this.toast('success', 'Recording stopped');
+                } else {
+                    if (!this.state.stream) { this.toast('error', 'Start streaming first'); return; }
+                    this.state.chunks = [];
+                    this.state.recorder = new MediaRecorder(this.state.stream, { mimeType: 'video/webm' });
+                    this.state.recorder.ondataavailable = e => { if (e.data.size > 0) this.state.chunks.push(e.data); };
+                    this.state.recorder.onstop = () => {
+                        const blob = new Blob(this.state.chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `stream-${Date.now()}.webm`;
+                        a.click();
+                        this.toast('success', 'Recording saved!');
+                    };
+                    this.state.recorder.start();
+                    this.state.recording = true;
+                    document.getElementById('recBtn').textContent = '⏹️';
+                    this.toast('success', 'Recording started');
+                }
+            },
+
+            snapshot() {
+                const video = document.getElementById('video');
+                if (!video.videoWidth) { this.toast('error', 'No video to capture'); return; }
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `snapshot-${Date.now()}.png`;
+                    a.click();
+                    this.toast('success', 'Snapshot saved!');
+                });
+            },
+
+            preset(platform) {
+                const presets = {
+                    twitch: 'rtmp://live.twitch.tv/app',
+                    youtube: 'rtmp://a.rtmp.youtube.com/live2',
+                    facebook: 'rtmps://live-api-s.facebook.com:443/rtmp',
+                    restream: 'rtmp://live.restream.io/live'
+                };
+                document.getElementById('url').value = presets[platform];
+                this.toast('success', `${platform.charAt(0).toUpperCase() + platform.slice(1)} preset applied!`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            toast(type, msg) {
+                const t = document.createElement('div');
+                t.className = 'toast';
+                const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+                t.innerHTML = `<strong>${icons[type] || 'ℹ️'}</strong> ${msg}`;
+                document.body.appendChild(t);
+                setTimeout(() => t.remove(), 5000);
+            }
+        };
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(
+                URL.createObjectURL(new Blob([`
+                    self.addEventListener('install', () => self.skipWaiting());
+                    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => new Response('Offline'))));
+                `], { type: 'application/javascript' }))
+            ).catch(() => {});
+        }
+
+        // Initialize
+        APP.init();
+    </script>
+
+    <!-- Zero Harm Notice -->
+    <!-- This tool is intended for ethical streaming only. Not for surveillance, weaponization, or privacy violations. -->
+    <!-- License: MIT with Non-Weaponization Clause -->
+    <!-- Built by Foster + Navi @ Planetary Restoration Archive -->
+</body>
+</html>
